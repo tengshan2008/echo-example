@@ -6,7 +6,7 @@ import (
 
 func main() {
 	// create a new echo instance
-	e := routers.New()
+	r := routers.New()
 	// Start server
-	e.Logger.Fatal(e.Start(":1323"))
+	r.Logger.Fatal(r.Start(":1323"))
 }
