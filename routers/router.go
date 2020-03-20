@@ -20,7 +20,7 @@ func New() *echo.Echo {
 	apis.AdminGroup(e.Group("/admin"))
 
 	// set cat group routes
-	apis.CatGroup(e.Group("/cats"))
+	apis.CatGroup(e.Group("/v1/cats"))
 
 	return e
 }

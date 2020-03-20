@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"github.com/jinzhu/gorm"
+)
 
 // Comment is struct hold unit of request and response
 type Comment struct {
@@ -18,6 +22,7 @@ func (c *Comment) PreInsert() error { return nil }
 func (c *Comment) PreUpdate() error { return nil }
 
 type Cat struct {
+	gorm.Model
 	ID   int64
 	Name string
 	Type string

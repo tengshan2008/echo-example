@@ -10,9 +10,7 @@ import (
 	"github.com/labstack/echo"
 )
 
-type CatHandler struct {
-	Cat models.Cat
-}
+type CatHandler struct{}
 
 type catGetRequest struct {
 	Name    string `json:"name" form:"name" query:"name"`
@@ -50,15 +48,16 @@ func newCatGetResponse(c echo.Context, cat []models.Cat) catGetResponse {
 
 func (h *CatHandler) Get(c echo.Context) (err error) {
 	req := new(catGetRequest)
-	if err = req.bind(c, &h.Cat); err != nil {
+	cat := new(models.Cat)
+	if err = req.bind(c, cat); err != nil {
 		return
 	}
 	var cats []models.Cat
-	if h.Cat.ID == 0 {
-		cats = h.Cat.ReadMore(req.Sort, req.Fields, req.Page, req.PerPage)
+	if cat.ID == 0 {
+		cats = cat.ReadMore(req.Sort, req.Fields, req.Page, req.PerPage)
 	} else {
-		h.Cat.ReadOne(req.Fields)
-		cats = append(cats, h.Cat)
+		cat.ReadOne(req.Fields)
+		cats = append(cats, *cat)
 	}
 
 	resp := newCatGetResponse(c, cats)
@@ -88,10 +87,11 @@ func (r *catAddRequest) bind(c echo.Context, cat *models.Cat) (err error) {
 
 func (h *CatHandler) Add(c echo.Context) (err error) {
 	req := new(catAddRequest)
-	if err = req.bind(c, &h.Cat); err != nil {
+	cat := new(models.Cat)
+	if err = req.bind(c, cat); err != nil {
 		return
 	}
-	if err = h.Cat.PreInsert(); err != nil {
+	if err = cat.PreInsert(); err != nil {
 		return
 	}
 	return c.JSON(http.StatusCreated, req)
