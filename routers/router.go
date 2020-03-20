@@ -2,7 +2,6 @@ package routers
 
 import (
 	"echo-example/apis"
-	"echo-example/apis/middlewares"
 
 	"github.com/labstack/echo"
 )
@@ -11,19 +10,17 @@ import (
 func New() *echo.Echo {
 	// create a new echo instance
 	e := echo.New()
-
-	// create groups
-	adminGroup := e.Group("/admin")
-
-	// set middlewares
-	middlewares.SetMainMiddlewares(e)
-	middlewares.SetAdminMiddlewares(adminGroup)
+	// use debug mode, could config this.
+	e.Debug = true
 
 	// set main routes
 	apis.MainGroup(e)
 
-	// set group routes
-	apis.AdminGroup(adminGroup)
+	//set admin group routes
+	apis.AdminGroup(e.Group("/admin"))
+
+	// set cat group routes
+	apis.CatGroup(e.Group("/cats"))
 
 	return e
 }
