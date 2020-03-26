@@ -21,6 +21,7 @@ func CatGroup(g *echo.Group) {
 	h := new(handlers.CatHandler)
 	g.GET("/:id", h.Get)
 	g.POST("", h.Add)
+	g.DELETE("/:id", h.Delete)
 	// g.GET("/:id/comments/:cid", h.GetComments)
 	// g.POST("/:id/comments", h.AddComments)
 }

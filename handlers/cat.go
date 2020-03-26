@@ -3,6 +3,7 @@ package handlers
 import (
 	"echo-example/models"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -38,7 +39,12 @@ func (r *catGetRequest) bind(c echo.Context, cat *models.Cat) (err error) {
 	}
 	cat.Name = r.Name
 	cat.Type = r.Type
-	cat.ID, err = strconv.ParseInt(c.Param("id"), 10, 64)
+	var id uint64
+	id, err = strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		return
+	}
+	cat.Model.ID = uint(id)
 	return
 }
 
@@ -91,8 +97,30 @@ func (h *CatHandler) Add(c echo.Context) (err error) {
 	if err = req.bind(c, cat); err != nil {
 		return
 	}
-	if err = cat.PreInsert(); err != nil {
-		return
+	if ok := cat.Insert(); !ok {
+		return errors.New("insert new cat failed")
 	}
 	return c.JSON(http.StatusCreated, req)
+}
+
+type catDeleteRequest struct{}
+
+func (r *catDeleteRequest) bind(c echo.Context, cat *models.Cat) (err error) {
+	var id uint64
+	id, err = strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		return
+	}
+	cat.Model.ID = uint(id)
+	return
+}
+
+func (h *CatHandler) Delete(c echo.Context) (err error) {
+	req := new(catDeleteRequest)
+	cat := new(models.Cat)
+	if err = req.bind(c, cat); err != nil {
+		return
+	}
+	cat.Delete()
+	return c.JSON(http.StatusOK, req)
 }
