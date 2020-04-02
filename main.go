@@ -7,7 +7,7 @@ import (
 
 func main() {
 	// connect db
-	db := models.New()
+	db := models.ConnectDB()
 	defer db.Close()
 	// create a new echo instance
 	r := routers.New()

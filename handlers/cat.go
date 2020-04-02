@@ -13,62 +13,82 @@ import (
 
 type CatHandler struct{}
 
-type catGetRequest struct {
+// get cat handlers
+// include get one or get mutiple
+
+type catGetOneRequest struct {
+	Fields string `json:"fields" form:"fields" query:"fields"`
+}
+
+func (r *catGetOneRequest) bind(c echo.Context, cat *models.Cat) (err error) {
+	var id uint64
+	id, err = strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		return
+	}
+	cat.ID = uint(id)
+	return
+}
+
+type catGetResponse struct {
+	Message string      `json:"message,omitempty"`
+	Data    interface{} `json:"data,omitempty"`
+}
+
+func newCatGetResponse(c echo.Context, data interface{}) (r catGetResponse) {
+	r.Message = "ok"
+	r.Data = data
+	return
+}
+
+func (h *CatHandler) GetOne(c echo.Context) (err error) {
+	req := new(catGetOneRequest)
+	cat := new(models.Cat)
+	if err = req.bind(c, cat); err != nil {
+		return
+	}
+
+	cat.ReadOne(req.Fields)
+
+	resp := newCatGetResponse(c, cat)
+	return c.JSON(http.StatusOK, resp)
+}
+
+type catGetMoreRequest struct {
 	Name    string `json:"name" form:"name" query:"name"`
 	Type    string `json:"type" form:"type" query:"type"`
+	Search  string `json:"search" form:"search" query:"search"`
 	Sort    string `json:"sort" form:"sort" query:"sort"`
 	Fields  string `json:"fields" form:"fields" query:"fields"`
 	Page    int64  `json:"page" form:"page" query:"page"`
 	PerPage int64  `json:"per_page" form:"per_page" query:"per_page"`
 }
 
-type catGetResponse struct {
-	Message string `json:"message,omitempty"`
-	Data    struct {
-		Name string `json:"name,omitempty"`
-		Type string `json:"type,omitempty"`
-	} `json:"data,omitempty"`
-}
-
-func (r *catGetRequest) bind(c echo.Context, cat *models.Cat) (err error) {
+func (r *catGetMoreRequest) bind(c echo.Context, cat *models.Cat) (err error) {
 	if err = c.Bind(r); err != nil {
-		return
-	}
-	if err = c.Validate(r); err != nil {
 		return
 	}
 	cat.Name = r.Name
 	cat.Type = r.Type
-	var id uint64
-	id, err = strconv.ParseUint(c.Param("id"), 10, 64)
-	if err != nil {
-		return
-	}
-	cat.Model.ID = uint(id)
 	return
 }
 
-func newCatGetResponse(c echo.Context, cat []models.Cat) catGetResponse {
-	return catGetResponse{}
-}
-
-func (h *CatHandler) Get(c echo.Context) (err error) {
-	req := new(catGetRequest)
+func (h *CatHandler) GetMore(c echo.Context) (err error) {
+	req := new(catGetMoreRequest)
 	cat := new(models.Cat)
 	if err = req.bind(c, cat); err != nil {
 		return
 	}
-	var cats []models.Cat
-	if cat.ID == 0 {
-		cats = cat.ReadMore(req.Sort, req.Fields, req.Page, req.PerPage)
-	} else {
-		cat.ReadOne(req.Fields)
-		cats = append(cats, *cat)
-	}
-
+	cats := cat.ReadMore(req.Search, req.Sort, req.Fields, req.Page, req.PerPage)
 	resp := newCatGetResponse(c, cats)
 	return c.JSON(http.StatusOK, resp)
 }
+
+func (h *CatHandler) V2GetMore(c echo.Context) (err error) {
+	return c.String(http.StatusOK, "coming soon!")
+}
+
+// add new cat handler
 
 type catAddRequest struct {
 	Name string `json:"name" form:"name" query:"name"`
@@ -83,9 +103,6 @@ func (r *catAddRequest) bind(c echo.Context, cat *models.Cat) (err error) {
 		log.Fatalf("Failed reading the request body %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error)
 	}
-	if err = c.Validate(r); err != nil {
-		return
-	}
 	cat.Name = r.Name
 	cat.Type = r.Type
 	return
@@ -97,11 +114,13 @@ func (h *CatHandler) Add(c echo.Context) (err error) {
 	if err = req.bind(c, cat); err != nil {
 		return
 	}
-	if ok := cat.Insert(); !ok {
+	if notExist := cat.Insert(); notExist {
 		return errors.New("insert new cat failed")
 	}
 	return c.JSON(http.StatusCreated, req)
 }
+
+// delete cat handler
 
 type catDeleteRequest struct{}
 
@@ -111,7 +130,7 @@ func (r *catDeleteRequest) bind(c echo.Context, cat *models.Cat) (err error) {
 	if err != nil {
 		return
 	}
-	cat.Model.ID = uint(id)
+	cat.ID = uint(id)
 	return
 }
 
@@ -121,6 +140,8 @@ func (h *CatHandler) Delete(c echo.Context) (err error) {
 	if err = req.bind(c, cat); err != nil {
 		return
 	}
-	cat.Delete()
+	if notExist := cat.Delete(); !notExist {
+		return errors.New("delete record failed")
+	}
 	return c.JSON(http.StatusOK, req)
 }

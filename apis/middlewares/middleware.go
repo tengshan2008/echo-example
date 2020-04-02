@@ -31,6 +31,14 @@ func SetAdminMiddlewares(g *echo.Group) {
 	g.Use(middleware.BasicAuth(bavFunc))
 }
 
+func SetLogMiddlewares(e *echo.Echo) {
+	// logs all server interaction
+	loggerConfig := middleware.LoggerConfig{
+		Format: `[${time_rfc3339} ${status} ${method} ${host}${path} ${latency_human}]` + "\n",
+	}
+	e.Use(middleware.LoggerWithConfig(loggerConfig))
+}
+
 // ServerHeader middleware adds a `server` header to the response
 func serverHeader(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
